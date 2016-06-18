@@ -1,0 +1,1657 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        
+        "demo_name": {
+            "type": "string"
+        },
+        
+        "global_suffix": {
+            "type": "string"
+        },
+        
+        "datacenter_location": {
+            "type": "string"
+        },
+        
+        "web_service_package_url": {
+            "type": "string"
+        },
+        
+        "local_machine_external_ip_address": {
+            "type": "string"
+        },
+        
+        "dow_jones_price": {
+            "type": "string"
+        },
+        
+        "currency_pairs_data": {
+            "type": "string"
+        },
+        
+        "customer_churn_pbi_url": {
+            "type": "string"
+        },
+        
+        "financial_advisor_pbi_url": {
+            "type": "string"
+        }
+      
+    },
+    "variables": {
+        
+        "datacenter_location": "[parameters('datacenter_location')]",
+        
+        "web_service_hosting_plan_name": "[concat(parameters('demo_name'), 'hp', parameters('global_suffix'))]",
+        "web_service_hosting_plan_resource_id": "[resourceId('Microsoft.Web/serverfarms', variables('web_service_hosting_plan_name'))]",
+        
+        "web_service_name": "[concat(parameters('demo_name'), 'svc')]",
+        "web_service_resource_id": "[resourceId('Microsoft.Web/sites', variables('web_service_name'))]",
+        "web_service_package_url": "[parameters('web_service_package_url')]",
+        "web_service_hosting_plan_sku": "Standard",
+        "web_service_hosting_plan_worker_size": "1",
+        
+        "service_bus_namespace_name": "[concat(parameters('demo_name'), 'sbns', parameters('global_suffix'))]",
+        "shared_access_policy_name": "RootManageSharedAccessKey",
+        "auth_rule_resource_id": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('service_bus_namespace_name'), variables('shared_access_policy_name'))]",
+        "service_bus_api_version": "2015-08-01",
+        "key_generator_template_uri": "https://raw.githubusercontent.com/sjkp/Azure.ARM.ServiceBus/master/Azure.ARM.ServiceBus/Templates/keygenerator.json",
+        "service_bus_primary_sas": "primary_key",
+        "service_bus_secondary_sas": "secondary_key",
+        
+        "eventhub_eh_name": "[concat(parameters('demo_name'), 'eh', parameters('global_suffix'))]",
+        "eventhub_eh_allquotes_name": "[concat(parameters('demo_name'), 'eh_allquotes_', parameters('global_suffix'))]",
+        "eventhub_eh_companies_name": "[concat(parameters('demo_name'), 'eh_companies_', parameters('global_suffix'))]",
+        "eventhub_eh_indices_name": "[concat(parameters('demo_name'), 'eh_indices_', parameters('global_suffix'))]",
+        "eventhub_eh_news_name": "[concat(parameters('demo_name'), 'eh_news_', parameters('global_suffix'))]",
+        "eventhub_eh_sectors_name": "[concat(parameters('demo_name'), 'eh_sectors_', parameters('global_suffix'))]",
+        
+        "sb_topic_allquotes_name": "[concat(parameters('demo_name'), 'eh-allquotes-sbt-', parameters('global_suffix'))]",
+        "sb_topic_companies_name": "[concat(parameters('demo_name'), 'eh-companies-sbt-', parameters('global_suffix'))]",
+        "sb_topic_indices_name": "[concat(parameters('demo_name'), 'eh-indices-sbt-', parameters('global_suffix'))]",
+        "sb_topic_news_name": "[concat(parameters('demo_name'), 'eh-news-sbt-', parameters('global_suffix'))]",
+        "sb_topic_sectors_name": "[concat(parameters('demo_name'), 'eh-sectors-sbt-', parameters('global_suffix'))]",
+        
+        "sa_name": "[concat(parameters('demo_name'), 'sa', parameters('global_suffix'))]",
+        "sa_input_allquotes_name": "[concat(parameters('demo_name'), 'eh-allquotes-', parameters('global_suffix'))]",
+        "sa_input_companies_name": "[concat(parameters('demo_name'), 'eh-companies-', parameters('global_suffix'))]",
+        "sa_input_indices_name": "[concat(parameters('demo_name'), 'eh-indices-', parameters('global_suffix'))]",
+        "sa_input_news_name": "[concat(parameters('demo_name'), 'eh-news-', parameters('global_suffix'))]",
+        "sa_input_sectors_name": "[concat(parameters('demo_name'), 'eh-sectors-', parameters('global_suffix'))]",
+        
+        "sa_pbi_name": "[concat(parameters('demo_name'), 'pbi', parameters('global_suffix'))]",
+        "sa_pbi_input_companies_name": "[concat(parameters('demo_name'), 'pbicompanies')]",
+        "sa_pbi_input_indices_name": "[concat(parameters('demo_name'), 'pbi-indices')]",
+        "sa_pbi_input_news_name": "[concat(parameters('demo_name'), 'pbi-news')]",
+        "sa_pbi_input_sectors_name": "[concat(parameters('demo_name'), '-sectors')]",
+
+        "sa_output_start_mode": "JobStartTime",
+        
+        "sql_server_name": "[concat(parameters('demo_name'), 'svr', parameters('global_suffix'))]",
+        "sql_server_resource_id": "[concat('Microsoft.Sql/servers/', variables('sql_server_name'))]",
+        "sql_server_username": "[parameters('demo_name')]",
+        "sql_server_password": "Pa55w0rd",
+        
+        "sql_server_db_name": "ntfindemosqldb0630",
+        "sql_server_dw_name": "ntfindemosqldw0630",
+        
+        "data_factory_name": "[concat(parameters('demo_name'), 'df', parameters('global_suffix'))]",    
+        "data_factory_version": "2015-09-01",
+        "data_factory_sqldw_linked_service_name": "[concat(parameters('demo_name'), 'sqldwLinkedService', parameters('global_suffix'))]",
+        "data_factory_sqldb_linked_service_name": "[concat(parameters('demo_name'), 'sqldbLinkedService', parameters('global_suffix'))]",
+        "data_factory_sqldb_input_table_prefix": "[concat(parameters('demo_name'), parameters('global_suffix'))]",
+        "data_factory_sqldw_output_table_prefix": "[concat(parameters('demo_name'), parameters('global_suffix'))]",
+        "data_factory_pipeline_prefix": "[concat(parameters('demo_name'), 'db2dwPipeline', parameters('global_suffix'))]",
+
+        "vm_storage_account_name": "[concat(parameters('demo_name'), 'vmstorage', parameters('global_suffix'))]",
+        "vm_storage_account_type": "Standard_LRS",
+        "vm_storage_account_id": "[resourceId('Microsoft.Storage/storageAccounts', variables('vm_storage_account_name'))]",
+        
+        "blob_data_store_account_name": "[concat(parameters('demo_name'), 'blobstorage', parameters('global_suffix'))]",
+        "blob_data_store_account_type": "Standard_LRS",
+        "blob_data_store_account_Id": "[resourceId('Microsoft.Storage/storageAccounts', variables('blob_data_store_account_name'))]",
+        
+        "vm_name": "[concat(parameters('demo_name'), 'vm', parameters('global_suffix'))]",
+        "vm_size": "Standard_A3",
+        "vm_admin_username": "[parameters('demo_name')]",
+        "vm_admin_password": "Pa55w0rd",
+        
+        "vm_public_ip_name": "[concat(parameters('demo_name'), 'public-ip', parameters('global_suffix'))]",
+        "vm_public_ip_type": "Dynamic",
+        
+        "vm_network_security_group_name": "[concat(parameters('demo_name'), 'securitygroup', parameters('global_suffix'))]",
+        "vm_virtual_network_name": "[concat(parameters('demo_name'), 'virtualnetwork', parameters('global_suffix'))]",
+        "vm_virtual_network_prefix": "10.0.0.0/16",
+        "vm_virtual_network_subnet_prefix": "10.0.0.0/24",
+        "vm_virtual_network_subnet_name": "default",
+        "vm_network_interface_name": "[concat(parameters('demo_name'), 'nic', parameters('global_suffix'))]",
+        
+        "vm_virtual_network_id": "[resourceId(resourceGroup().Name,'Microsoft.Network/virtualNetworks', variables('vm_virtual_network_name'))]",
+        "vm_virtual_network_subnet_ref": "[concat(variables('vm_virtual_network_id'), '/subnets/', variables('vm_virtual_network_subnet_name'))]"
+    },
+    "resources": [ 
+        {
+            "comments": "### Generate Primary SAS Key ###",
+            "apiVersion": "2015-01-01",
+            "name": "[variables('service_bus_primary_sas')]",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "incremental",
+                "templateLink": {
+                    "uri": "[variables('key_generator_template_uri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "seed": { "value": "1234a5" }
+                }
+            }
+        },
+        {
+            "comments": "### Generate Secondary SAS Key ###",
+            "apiVersion": "2015-01-01",
+            "name": "[variables('service_bus_secondary_sas')]",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "incremental",
+                "templateLink": {
+                    "uri": "[variables('key_generator_template_uri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "seed": { "value": "ac34a5" }
+                }
+            }
+        },  
+        {  
+            "comments": "### Create Virtual Network for VM ###",
+            "name":"[variables('vm_virtual_network_name')]",
+            "type":"Microsoft.Network/virtualNetworks",
+            "apiVersion":"2015-06-15",
+            "location": "[variables('datacenter_location')]",
+            "properties":{  
+                "addressSpace":{  
+                "addressPrefixes":[  
+                        "[variables('vm_virtual_network_prefix')]"
+                    ]
+                },
+                "subnets":[  
+                    {  
+                        "name":"[variables('vm_virtual_network_subnet_name')]",
+                        "properties":{  
+                            "addressPrefix":"[variables('vm_virtual_network_subnet_prefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {  
+            "comments": "### Create Public IP for VM ###",
+            "name":"[variables('vm_public_ip_name')]",
+            "type":"Microsoft.Network/publicIpAddresses",
+            "apiVersion":"2015-06-15",
+            "location": "[variables('datacenter_location')]",
+            "properties":{  
+                "publicIpAllocationMethod":"[variables('vm_public_ip_type')]"
+            }
+        },
+        {  
+            "comments": "### Create Network Security Group for VM ###",
+            "name":"[variables('vm_network_security_group_name')]",
+            "type":"Microsoft.Network/networkSecurityGroups",
+            "apiVersion":"2015-06-15",
+            "location": "[variables('datacenter_location')]",
+            "properties":{  
+                "securityRules":[  
+                    {  
+                        "name":"default-allow-rdp",
+                        "properties":{  
+                            "priority":1000,
+                            "sourceAddressPrefix":"*",
+                            "protocol":"Tcp",
+                            "destinationPortRange":"3389",
+                            "access":"Allow",
+                            "direction":"inbound",
+                            "sourcePortRange":"*",
+                            "destinationAddressPrefix":"*"
+                        }
+                    },
+                    {  
+                        "name":"default-allow-sql",
+                        "properties":{  
+                            "priority":1500,
+                            "sourceAddressPrefix":"*",
+                            "protocol":"Tcp",
+                            "destinationPortRange":"1433",
+                            "access":"Allow",
+                            "direction":"inbound",
+                            "sourcePortRange":"*",
+                            "destinationAddressPrefix":"*"
+                        }
+                    }
+                ]
+            }
+        },
+        {  
+            "comments": "### Create NIC for VM ###",
+            "name":"[variables('vm_network_interface_name')]",
+            "type":"Microsoft.Network/networkInterfaces",
+            "apiVersion":"2015-06-15",
+            "location": "[variables('datacenter_location')]",
+            "dependsOn":[  
+                "[concat('Microsoft.Network/virtualNetworks/', variables('vm_virtual_network_name'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', variables('vm_public_ip_name'))]",
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('vm_network_security_group_name'))]"
+            ],
+            "properties":{  
+                "ipConfigurations":[  
+                {  
+                    "name":"ipconfig1",
+                    "properties":{  
+                        "subnet":{  
+                            "id":"[variables('vm_virtual_network_subnet_ref')]"
+                        },
+                        "privateIPAllocationMethod":"Dynamic",
+                        "publicIpAddress":{  
+                            "id":"[resourceId(resourceGroup().Name,'Microsoft.Network/publicIpAddresses', variables('vm_public_ip_name'))]"
+                        }
+                    }
+                }
+                ],
+                "networkSecurityGroup":{  
+                "id":"[resourceId(resourceGroup().Name, 'Microsoft.Network/networkSecurityGroups', variables('vm_network_security_group_name'))]"
+                }
+            }
+        },
+        {  
+            "comments": "### Create Storage Account for VM ###",
+            "name":"[variables('vm_storage_account_name')]",
+            "type":"Microsoft.Storage/storageAccounts",
+            "apiVersion":"2015-06-15",
+            "location": "[variables('datacenter_location')]",
+            "properties":{  
+                "accountType":"[variables('vm_storage_account_type')]"
+            }
+        },
+        {  
+            "comments": "### Create Storage Account for SQL on VM to push data out to, prior to pushing into Azure Data Lake. ###",
+            "name":"[variables('blob_data_store_account_name')]",
+            "type":"Microsoft.Storage/storageAccounts",
+            "apiVersion":"2015-06-15",
+            "location": "[variables('datacenter_location')]",
+            "properties":{  
+                "accountType":"[variables('blob_data_store_account_type')]"
+            }
+        },
+        {  
+            "comments": "### Create VM for SQL 2016 ###",
+            "name":"[variables('vm_name')]",
+            "type":"Microsoft.Compute/virtualMachines",
+            "apiVersion":"2015-06-15",
+            "location": "[variables('datacenter_location')]",
+            "dependsOn":[  
+                "[concat('Microsoft.Network/networkInterfaces/', variables('vm_network_interface_name'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', variables('vm_storage_account_name'))]"
+            ],
+            "properties":{  
+                "osProfile":{  
+                "computerName":"[variables('vm_name')]",
+                "adminUsername":"[variables('vm_admin_username')]",
+                "adminPassword":"[variables('vm_admin_password')]",
+                "windowsConfiguration":{  
+                    "provisionVmAgent":"true"
+                }
+                },
+                "hardwareProfile":{  
+                "vmSize":"[variables('vm_size')]"
+                },
+                "storageProfile":{  
+                "imageReference":{  
+                    "publisher":"MicrosoftSQLServer",
+                    "offer":"SQL2016-WS2012R2",
+                    "sku":"Enterprise",
+                    "version":"latest"
+                },
+                "osDisk":{  
+                    "name":"[variables('vm_name')]",
+                    "vhd":{  
+                        "uri":"[concat(concat(reference(resourceId(resourceGroup().Name, 'Microsoft.Storage/storageAccounts', variables('vm_storage_account_name')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), variables('vm_name'), '201624135551.vhd')]"
+                    },
+                    "createOption":"fromImage"
+                },
+                "dataDisks": [  
+                    {  
+                        "name":"[concat(variables('vm_name'), '-disk-1')]",
+                        "vhd":{  
+                            "uri":"[concat(concat(reference(resourceId(resourceGroup().Name, 'Microsoft.Storage/storageAccounts', variables('vm_storage_account_name')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), variables('vm_name'), '-disk-1-201624135551', '.vhd')]"
+                        },
+                        "createOption":"empty",
+                        "lun":0,
+                        "diskSizeGB":"1023",
+                        "caching":"ReadOnly"
+                    },
+                    {  
+                        "name":"[concat(variables('vm_name'), '-disk-2')]",
+                        "vhd":{  
+                            "uri":"[concat(concat(reference(resourceId(resourceGroup().Name, 'Microsoft.Storage/storageAccounts', variables('vm_storage_account_name')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), variables('vm_name'), '-disk-2-201624135551', '.vhd')]"
+                        },
+                        "createOption":"empty",
+                        "lun":1,
+                        "diskSizeGB":"1023",
+                        "caching":"ReadOnly"
+                    }
+                ]
+                },
+                "networkProfile":{  
+                "networkInterfaces":[  
+                    {  
+                        "id":"[resourceId('Microsoft.Network/networkInterfaces', variables('vm_network_interface_name'))]"
+                    }
+                ]
+                }
+            }
+        },
+        {
+            "comments": "### Create Azure SQL Server ###",
+            "name": "[variables('sql_server_name')]",
+            "type": "Microsoft.Sql/servers",
+            "location": "[variables('datacenter_location')]",
+            "tags": {
+                "displayName": "[variables('sql_server_name')]"
+            },
+            "apiVersion": "2014-04-01-preview",
+            "properties": {
+                "administratorLogin": "[variables('sql_server_username')]",
+                "administratorLoginPassword": "[variables('sql_server_password')]",
+                "version": "12.0"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vm_name'))]"
+            ],
+            "resources": [
+                {
+                    "comments": "### Create SQL Database ###",
+                    "name": "[variables('sql_server_db_name')]",
+                    "type": "databases",
+                    "location": "[variables('datacenter_location')]",
+                    "tags": {
+                        "displayName": "[variables('sql_server_db_name')]"
+                    },
+                    "apiVersion": "2014-04-01-preview",
+                    "dependsOn": [
+                        "[variables('sql_server_resource_id')]"
+                    ],
+                    "properties": {
+                        "edition": "Standard",
+                        "collation": "SQL_Latin1_General_CP1_CI_AS",
+                        "maxSizeBytes": "1073741824",
+                        "requestedServiceObjectiveName": "S3"
+                    }
+                },
+                {
+                    "comments": "### Create SQL Data Warehouse ###",
+                    "name": "[variables('sql_server_dw_name')]",
+                    "type": "databases",
+                    "kind": "v12.0,user,datawarehouse",
+                    "apiVersion": "2014-04-01-preview",
+                    "location": "[variables('datacenter_location')]",
+                    "properties": {
+                        "edition": "DataWarehouse"
+                    },
+                    "dependsOn": [
+                        "[variables('sql_server_resource_id')]"
+                    ]
+                },
+                {
+                    "comments": "### FIREWALL (AZURE) ###",
+                    "apiVersion": "2014-04-01-preview",
+                    "type": "firewallrules",
+                    "name": "AllowAllWindowsAzureIps",
+                    "location": "[variables('datacenter_location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('sql_server_name'))]"
+                    ],
+                    "properties": {
+                        "endIpAddress": "0.0.0.0",
+                        "startIpAddress": "0.0.0.0"
+                    }
+                },
+                {
+                    "comments": "### FIREWALL (LOCAL MACHINE) ###",
+                    "apiVersion": "2014-04-01-preview",
+                    "type": "firewallrules",
+                    "name": "AllowLocalMachineExternalIp",
+                    "location": "[variables('datacenter_location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('sql_server_name'))]"
+                    ],
+                    "properties": {
+                        "endIpAddress": "[parameters('local_machine_external_ip_address')]",
+                        "startIpAddress": "[parameters('local_machine_external_ip_address')]"
+                    }
+                }
+            ]
+        },
+        {
+            "comments": "### Create Data Factory ###",
+            "name": "[variables('data_factory_name')]",
+            "apiVersion": "[variables('data_factory_version')]",
+            "type": "Microsoft.DataFactory/datafactories",
+            "location": "[variables('datacenter_location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Sql/servers/', variables('sql_server_name'))]",
+                "[concat('Microsoft.Sql/servers/', variables('sql_server_name'), '/databases/', variables('sql_server_db_name'))]",
+                "[concat('Microsoft.Sql/servers/', variables('sql_server_name'), '/databases/', variables('sql_server_dw_name'))]"
+            ],
+            "resources": [
+                {
+                    "comments": "### Output linked service (SQL DW) ###",
+                    "dependsOn": [ 
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]" 
+                        ],
+                    "type": "linkedservices",
+                    "name": "[variables('data_factory_sqldw_linked_service_name')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDW",
+                        "typeProperties": {
+                            "connectionString": "[concat('Server=tcp:',variables('sql_server_name'),'.database.windows.net,1433;Database=', variables('sql_server_dw_name'), ';User ID=',variables('sql_server_username'),';Password=',variables('sql_server_password'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Input linked service (SQL DB) ###",
+                    "dependsOn": [ 
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]" 
+                        ],
+                    "type": "linkedservices",
+                    "name": "[variables('data_factory_sqldb_linked_service_name')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDatabase",
+                        "typeProperties": {
+                            "connectionString": "[concat('Server=tcp:',variables('sql_server_name'),'.database.windows.net,1433;Database=', variables('sql_server_db_name'), ';User ID=',variables('sql_server_username'),';Password=',variables('sql_server_password'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Input table Source Nasdaq Listed Load ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlTable",
+                        "linkedServiceName": "[variables('data_factory_sqldb_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Nasdaq_Listed_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        },
+                        "external": true,
+                        "policy": {
+                            "externalData": {
+                                "retryInterval": "00:00:30",
+                                "retryTimeout": "00:05:00",
+                                "maximumRetry": 3
+                            }
+                        }
+                    }
+                },
+                {
+                    "comments": "### Input table Source Stocks ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlTable",
+                        "linkedServiceName": "[variables('data_factory_sqldb_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Stocks_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        },
+                        "external": true,
+                        "policy": {
+                            "externalData": {
+                                "retryInterval": "00:00:30",
+                                "retryTimeout": "00:05:00",
+                                "maximumRetry": 3
+                            }
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _Destin_Nasdaq_Listed_Load ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Nasdaq_Listed_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _Destin_Stocks_Load ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Stocks_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _FinalDestin_Nasdaq_Listed ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Nasdaq_Listed')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Nasdaq_Listed"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _FinalDestin_Stocks ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Stocks')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Stocks"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Nasdaq Listed Pipeline ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]"
+                    ],
+                    "type": "datapipelines",
+                    "name": "[concat(variables('data_factory_pipeline_prefix'), '_Nasdaq_Listed_Pipleine')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "description": "CopyActivity",
+                        "activities": [
+                            {
+                                "name": "CopyFromDBToDW",
+                                "description": "Push from DB to DW",
+                                "type": "Copy",
+                                "inputs": [ { "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]" } ],
+                                "outputs": [ { "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]" } ],
+                                "typeProperties": {
+                                    "source": {
+                                        "type": "AzureTableSource"
+                                    },
+                                    "sink": {
+                                        "type": "SqlSink",
+                                        "writeBatchSize": 10000,
+                                        "writeBatchTimeout": "60.00:00:00"
+                                    }
+                                },
+                                "policy": {
+                                    "timeout": "01:00:00",
+                                    "concurrency": 1,
+                                    "executionPriorityOrder": "NewestFirst"
+                                },
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                }
+                            },
+                            {
+                                "type": "SqlServerStoredProcedure",
+                                "typeProperties": {
+                                    "storedProcedureName": "sp_insert_stocks"
+                                },
+                                "inputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]"
+                                    }
+                                ],
+                                "outputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Stocks')]"
+                                    }
+                                ],
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                },
+                                "name": "SQLSPROCActivity",
+                                "description": "description"
+                            }
+                        ],
+                        "start": "2016-05-03T23:00:00Z",
+                        "end": "2017-12-31T00:00:00Z",
+                        "isPaused": false,
+                        "pipelineMode": "Scheduled"
+                    }
+                },
+                {
+                    "comments": "### Stocks Pipeline ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]"
+                    ],
+                    "type": "datapipelines",
+                    "name": "[concat(variables('data_factory_pipeline_prefix'), '_Stocks_Pipleine')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "description": "CopyActivity",
+                        "activities": [
+                            {
+                                "name": "CopyFromDBToDW",
+                                "description": "Push from DB to DW",
+                                "type": "Copy",
+                                "inputs": [ { "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]" } ],
+                                "outputs": [ { "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]" } ],
+                                "typeProperties": {
+                                    "source": {
+                                        "type": "AzureTableSource"
+                                    },
+                                    "sink": {
+                                        "type": "SqlSink",
+                                        "writeBatchSize": 10000,
+                                        "writeBatchTimeout": "60.00:00:00"
+                                    }
+                                },
+                                "policy": {
+                                    "timeout": "01:00:00",
+                                    "concurrency": 1,
+                                    "executionPriorityOrder": "NewestFirst"
+                                },
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                }
+                            },
+                            {
+                                "type": "SqlServerStoredProcedure",
+                                "typeProperties": {
+                                    "storedProcedureName": "sp_insert_nasdaq_Listed"
+                                },
+                                "inputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]"
+                                    }
+                                ],
+                                "outputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Nasdaq_Listed')]"
+                                    }
+                                ],
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                },
+                                "name": "SQLSPROCActivity",
+                                "description": "description"
+                            }
+                        ],
+                        "start": "2016-05-03T23:00:00Z",
+                        "end": "2017-12-31T00:00:00Z",
+                        "isPaused": false,
+                        "pipelineMode": "Scheduled"
+                    }
+                }
+            ]
+        },
+        {
+            "comments": "### Create Web Service Hosting Plan ###",
+            "apiVersion": "2015-04-01",
+            "name": "[variables('web_service_hosting_plan_name')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[variables('datacenter_location')]",
+            "properties": {
+                "name": "[variables('web_service_hosting_plan_name')]",
+                "sku": "[variables('web_service_hosting_plan_sku')]",
+                "workerSize": "[variables('web_service_hosting_plan_worker_size')]",
+                "numberOfWorkers": 1
+            }
+        },
+        {
+            "comments": "### Create Web Service ###",
+            "apiVersion": "2015-08-01",
+            "name": "[variables('web_service_name')]",
+            "type": "Microsoft.Web/sites",
+            "location": "[variables('datacenter_location')]",
+            "dependsOn": [
+                "[variables('web_service_hosting_plan_resource_id')]",
+                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+            ],
+            "properties": {
+                "serverFarmId": "[variables('web_service_hosting_plan_name')]",
+                "siteConfig": {
+                    "alwaysOn": true
+                }
+            },
+            "resources": [
+                {
+                    "comments": "### Deploy Web Service ###",
+                    "apiVersion": "2015-08-01",
+                    "name": "MSDeploy",
+                    "type": "extensions",
+                    "dependsOn": [
+                        "[variables('web_service_resource_id')]"
+                    ],
+                    "properties": {
+                        "packageUri": "[variables('web_service_package_url')]"
+                    }
+                },
+                {
+                    "comments": "### Apply application settings to web service ###",
+                    "apiVersion": "2015-08-01",
+                    "type": "config",
+                    "name": "appsettings",
+                    "dependsOn": [
+                        "[variables('web_service_resource_id')]"
+                    ],
+                    "properties": {
+                        "MobileAppsManagement_EXTENSION_VERSION": "latest",
+                        "Finance.ServiceName": "[parameters('demo_name')]",
+                        "Finance.SharedAccessKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                        "Finance.ServerConfigurationKey": "F0F21302-EA33-46B2-9F32-B2994C78D323",
+                        "Finance.ClientConfigurationKey": "9F3BC371-5901-4712-A145-A38606F7B877",
+                        "FInance.UpdateIntervalSeconds": "5",
+                        "Finance.YahooUpdateIntervalMinutes": "10",
+                        "Finance.SettingsSubdomain": "[variables('web_service_name')]",
+                        "Finance.DefaultPrice.DJI": "[parameters('dow_jones_price')]",
+                        "Finance.DefaultPrice.CTOS": "108.1",
+                        "Finance.RSSUpdateIntervalMinutes": "10",
+                        "Finance.RSSSourceUrl": "http://rss.cnn.com/rss/edition.rss",
+                        "Finance.RefreshCyclesPerPowerBIUpdate": "2",
+                        "Finance.PowerBIDashboardUrl.CustomerChurn": "[parameters('customer_churn_pbi_url')]",
+                        "Finance.PowerBIDashboardUrl.FinancialAdvisor": "[parameters('financial_advisor_pbi_url')]",
+                        "Finance.CurrencyPairs.Data": "[parameters('currency_pairs_data')]",
+                        "Finance.Alerts.ChurnAlertCustomerId": "C2",
+                        "Finance.Alerts.SuspiciousTradeCustomerId": "C4",
+                        "Finance.CRM.DefaultWebsiteUrl": "http://microsoft.com"
+                    }
+                }
+                
+            ]
+        },
+        {
+            "comments": "### Create ServiceBus Namespace ###",
+            "apiVersion":"[variables('service_bus_api_version')]",
+            "name":"[variables('service_bus_namespace_name')]",
+            "type":"Microsoft.ServiceBus/Namespaces",
+            "location": "[variables('datacenter_location')]",
+            "sku":{  
+                "name":"StandardSku",
+                "tier":"Standard"
+            },
+            "resources": [ 
+                {
+                    "comments": "### Create Shared Access Policy for SBNS ###",
+                    "apiVersion": "[variables('service_bus_api_version')]",
+                    "name": "[concat(variables('service_bus_namespace_name'),'/SharedAccess')]",
+                    "type": "Microsoft.ServiceBus/namespaces/authorizationRules",
+                    "dependsOn": [
+                        "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
+                        "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                        "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                    ],
+                    "location": "[variables('datacenter_location')]",
+                    "properties": {
+                        "KeyName": "[variables('shared_access_policy_name')]",
+                        "ClaimType": "SharedAccessKey",
+                        "ClaimValue": "None",
+                        "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                        "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                        "Rights": [ "Send", "Manage", "Listen" ],
+                        "Revision": -1
+                    }
+                }, 
+                {  
+                    "comments": "### Create EventHub eh ###",
+                    "apiVersion":"[variables('service_bus_api_version')]",
+                    "name":"[variables('eventhub_eh_name')]",
+                    "type":"eventHubs",
+                    "dependsOn":[  
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties":{  
+                        "path":"[variables('eventhub_eh_name')]",
+                        "MessageRetiontionInDays": 7,
+                        "EventHubState": "Enabled",
+                        "PartitionCount": 16
+                    },
+                    "resources": [
+                        {
+                            "comments": "### Configure Shared Access Policy ###",
+                            "apiVersion": "[variables('service_bus_api_version')]",
+                            "name": "[concat('accessfor', variables('eventhub_eh_name'))]",
+                            "type": "AuthorizationRules",
+                            "dependsOn": [
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_name'))]",
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                            ],
+                            "location": "[variables('datacenter_location')]",
+                            "properties": {
+                                "KeyName": "[concat('accessfor', variables('eventhub_eh_name'))]",
+                                "ClaimType": "SharedAccessKey",
+                                "ClaimValue": "None",
+                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "Rights": [ "Send", "Manage", "Listen" ],
+                                "Revision": -1
+                            }
+                        }
+                    ]
+                },
+                {  
+                    "comments": "### Create EventHub eh_allquotes_ ###",
+                    "apiVersion":"[variables('service_bus_api_version')]",
+                    "name":"[variables('eventhub_eh_allquotes_name')]",
+                    "type":"eventHubs",
+                    "dependsOn":[  
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties":{  
+                        "path":"[variables('eventhub_eh_allquotes_name')]",
+                        "MessageRetiontionInDays": 7,
+                        "EventHubState": "Enabled",
+                        "PartitionCount": 4
+                    },
+                    "resources": [
+                        {
+                            "comments": "### Configure Shared Access Policy ###",
+                            "apiVersion": "[variables('service_bus_api_version')]",
+                            "name": "[concat('accessfor', variables('eventhub_eh_allquotes_name'))]",
+                            "type": "AuthorizationRules",
+                            "dependsOn": [
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_allquotes_name'))]",
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                            ],
+                            "location": "[variables('datacenter_location')]",
+                            "properties": {
+                                "KeyName": "[concat('accessfor', variables('eventhub_eh_allquotes_name'))]",
+                                "ClaimType": "SharedAccessKey",
+                                "ClaimValue": "None",
+                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "Rights": [ "Send", "Manage", "Listen" ],
+                                "Revision": -1
+                            }
+                        }
+                    ]
+                },
+                {  
+                    "comments": "### Create EventHub eh_companies_ ###",
+                    "apiVersion":"[variables('service_bus_api_version')]",
+                    "name":"[variables('eventhub_eh_companies_name')]",
+                    "type":"eventHubs",
+                    "dependsOn":[  
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties":{  
+                        "path":"[variables('eventhub_eh_companies_name')]",
+                        "MessageRetiontionInDays": 2,
+                        "EventHubState": "Enabled",
+                        "PartitionCount": 4
+                    },
+                    "resources": [
+                        {
+                            "comments": "### Configure Shared Access Policy ###",
+                            "apiVersion": "[variables('service_bus_api_version')]",
+                            "name": "[concat('accessfor', variables('eventhub_eh_companies_name'))]",
+                            "type": "AuthorizationRules",
+                            "dependsOn": [
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_companies_name'))]",
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                            ],
+                            "location": "[variables('datacenter_location')]",
+                            "properties": {
+                                "KeyName": "[concat('accessfor', variables('eventhub_eh_companies_name'))]",
+                                "ClaimType": "SharedAccessKey",
+                                "ClaimValue": "None",
+                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "Rights": [ "Send", "Manage", "Listen" ],
+                                "Revision": -1
+                            }
+                        }
+                    ]
+                },
+                {  
+                    "comments": "### Create EventHub eh_indices_ ###",
+                    "apiVersion":"[variables('service_bus_api_version')]",
+                    "name":"[variables('eventhub_eh_indices_name')]",
+                    "type":"eventHubs",
+                    "dependsOn":[  
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties":{  
+                        "path":"[variables('eventhub_eh_indices_name')]",
+                        "MessageRetiontionInDays": 2,
+                        "EventHubState": "Enabled",
+                        "PartitionCount": 4
+                    },
+                    "resources": [
+                        {
+                            "comments": "### Configure Shared Access Policy ###",
+                            "apiVersion": "[variables('service_bus_api_version')]",
+                            "name": "[concat('accessfor', variables('eventhub_eh_indices_name'))]",
+                            "type": "AuthorizationRules",
+                            "dependsOn": [
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_indices_name'))]",
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                            ],
+                            "location": "[variables('datacenter_location')]",
+                            "properties": {
+                                "KeyName": "[concat('accessfor', variables('eventhub_eh_indices_name'))]",
+                                "ClaimType": "SharedAccessKey",
+                                "ClaimValue": "None",
+                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "Rights": [ "Send", "Manage", "Listen" ],
+                                "Revision": -1
+                            }
+                        }
+                    ]
+                },
+                {  
+                    "comments": "### Create EventHub eh_news_ ###",
+                    "apiVersion":"[variables('service_bus_api_version')]",
+                    "name":"[variables('eventhub_eh_news_name')]",
+                    "type":"eventHubs",
+                    "dependsOn":[  
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties":{  
+                        "path":"[variables('eventhub_eh_news_name')]",
+                        "MessageRetiontionInDays": 2,
+                        "EventHubState": "Enabled",
+                        "PartitionCount": 4
+                    },
+                    "resources": [
+                        {
+                            "comments": "### Configure Shared Access Policy ###",
+                            "apiVersion": "[variables('service_bus_api_version')]",
+                            "name": "[concat('accessfor', variables('eventhub_eh_news_name'))]",
+                            "type": "AuthorizationRules",
+                            "dependsOn": [
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_news_name'))]",
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                            ],
+                            "location": "[variables('datacenter_location')]",
+                            "properties": {
+                                "KeyName": "[concat('accessfor', variables('eventhub_eh_news_name'))]",
+                                "ClaimType": "SharedAccessKey",
+                                "ClaimValue": "None",
+                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "Rights": [ "Send", "Manage", "Listen" ],
+                                "Revision": -1
+                            }
+                        }
+                    ]
+                },
+                {  
+                    "comments": "### Create EventHub eh_sectors_ ###",
+                    "apiVersion":"[variables('service_bus_api_version')]",
+                    "name":"[variables('eventhub_eh_sectors_name')]",
+                    "type":"eventHubs",
+                    "dependsOn":[  
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties":{  
+                        "path":"[variables('eventhub_eh_sectors_name')]",
+                        "MessageRetiontionInDays": 2,
+                        "EventHubState": "Enabled",
+                        "PartitionCount": 4
+                    },
+                    "resources": [
+                        {
+                            "comments": "### Configure Shared Access Policy ###",
+                            "apiVersion": "[variables('service_bus_api_version')]",
+                            "name": "[concat('accessfor', variables('eventhub_eh_sectors_name'))]",
+                            "type": "AuthorizationRules",
+                            "dependsOn": [
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_sectors_name'))]",
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
+                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                            ],
+                            "location": "[variables('datacenter_location')]",
+                            "properties": {
+                                "KeyName": "[concat('accessfor', variables('eventhub_eh_sectors_name'))]",
+                                "ClaimType": "SharedAccessKey",
+                                "ClaimValue": "None",
+                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "Rights": [ "Send", "Manage", "Listen" ],
+                                "Revision": -1
+                            }
+                        }
+                    ]
+                },
+                {
+                    "comments": "### Create Service Bus Topic eh-allquotes-sbt ###",
+                    "apiVersion": "[variables('service_bus_api_version')]",
+                    "name": "[variables('sb_topic_allquotes_name')]",
+                    "type": "Topics",
+                    "dependsOn": [
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties": {
+                        "path": "[variables('sb_topic_allquotes_name')]",
+                        "requiresDuplicateDetection": true,
+                        "filteringMessagesBeforePublishing": false,
+                        "isAnonymousAccessible": true
+                    },
+                    "resources": [
+                    ]
+                },
+                {
+                    "comments": "### Create Service Bus Topic eh-companies-sbt ###",
+                    "apiVersion": "[variables('service_bus_api_version')]",
+                    "name": "[variables('sb_topic_companies_name')]",
+                    "type": "Topics",
+                    "dependsOn": [
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties": {
+                        "path": "[variables('sb_topic_companies_name')]",
+                        "requiresDuplicateDetection": true,
+                        "filteringMessagesBeforePublishing": false,
+                        "isAnonymousAccessible": true
+                    },
+                    "resources": [
+                    ]
+                },
+                {
+                    "comments": "### Create Service Bus Topic eh-indices-sbt ###",
+                    "apiVersion": "[variables('service_bus_api_version')]",
+                    "name": "[variables('sb_topic_indices_name')]",
+                    "type": "Topics",
+                    "dependsOn": [
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties": {
+                        "path": "[variables('sb_topic_indices_name')]",
+                        "requiresDuplicateDetection": true,
+                        "filteringMessagesBeforePublishing": false,
+                        "isAnonymousAccessible": true
+                    },
+                    "resources": [
+                    ]
+                },
+                {
+                    "comments": "### Create Service Bus Topic eh-news-sbt ###",
+                    "apiVersion": "[variables('service_bus_api_version')]",
+                    "name": "[variables('sb_topic_news_name')]",
+                    "type": "Topics",
+                    "dependsOn": [
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties": {
+                        "path": "[variables('sb_topic_news_name')]",
+                        "requiresDuplicateDetection": true,
+                        "filteringMessagesBeforePublishing": false,
+                        "isAnonymousAccessible": true
+                    },
+                    "resources": [
+                    ]
+                },
+                {
+                    "comments": "### Create Service Bus Topic eh-sectors-sbt ###",
+                    "apiVersion": "[variables('service_bus_api_version')]",
+                    "name": "[variables('sb_topic_sectors_name')]",
+                    "type": "Topics",
+                    "dependsOn": [
+                        "[concat('Microsoft.ServiceBus/Namespaces/', variables('service_bus_namespace_name'))]"
+                    ],
+                    "properties": {
+                        "path": "[variables('sb_topic_sectors_name')]",
+                        "requiresDuplicateDetection": true,
+                        "filteringMessagesBeforePublishing": false,
+                        "isAnonymousAccessible": true
+                    },
+                    "resources": [
+                    ]
+                }
+            ]
+        },
+      
+        {
+            "comments": "### Create Stream Analytics Job for UWP app - Inputs, Outputs and Query ###",
+            "apiVersion": "2016-03-01",
+            "type": "Microsoft.StreamAnalytics/streamingjobs",
+            "name": "[variables('sa_name')]",
+            "location": "[variables('datacenter_location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_allquotes_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_companies_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_indices_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_news_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_sectors_name'))]",
+                
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/Topics/', variables('sb_topic_allquotes_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/Topics/', variables('sb_topic_companies_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/Topics/', variables('sb_topic_indices_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/Topics/', variables('sb_topic_news_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/Topics/', variables('sb_topic_sectors_name'))]"
+            ],
+            "properties": {
+                "sku": {
+                    "name": "standard"
+                },
+                "EventsOutOfOrderMaxDelayInSeconds": 0,
+                "EventsOutOfOrderPolicy": "adjust",
+                "Inputs": [
+                    {
+                        "Name": "[variables('sa_input_allquotes_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_allquotes_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sa_input_companies_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_companies_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sa_input_indices_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_indices_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sa_input_news_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_news_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sa_input_sectors_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_sectors_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    }
+                ],
+                "Transformation": {
+                    "Name": "companies",
+                    "Properties": {
+                        "Query": "[concat('SELECT * INTO [', variables('sb_topic_news_name'), '] FROM [', variables('sa_input_news_name'), '] SELECT * INTO [', variables('sb_topic_allquotes_name'), '] FROM [', variables('sa_input_allquotes_name'), '] SELECT * INTO [', variables('sb_topic_companies_name'), '] FROM [', variables('sa_input_companies_name'), '] SELECT * INTO [', variables('sb_topic_sectors_name'), '] FROM [', variables('sa_input_sectors_name'), '] SELECT * INTO [', variables('sb_topic_indices_name'), '] FROM [', variables('sa_input_indices_name'), ']')]"
+                    }
+                },
+                "Outputs": [
+                    {
+                        "Name": "[variables('sb_topic_allquotes_name')]",
+                        "properties":{  
+                            "datasource":{  
+                                "type":"Microsoft.ServiceBus/Topic",
+                                "properties":{  
+                                    "topicName": "[variables('sb_topic_allquotes_name')]",
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8",
+                                    "Format": "lineSeparated"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sb_topic_companies_name')]",
+                        "properties":{  
+                            "datasource":{  
+                                "type":"Microsoft.ServiceBus/Topic",
+                                "properties":{  
+                                    "topicName": "[variables('sb_topic_companies_name')]",
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8",
+                                    "Format": "lineSeparated"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sb_topic_indices_name')]",
+                        "properties":{  
+                            "datasource":{  
+                                "type":"Microsoft.ServiceBus/Topic",
+                                "properties":{  
+                                    "topicName": "[variables('sb_topic_indices_name')]",
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8",
+                                    "Format": "lineSeparated"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sb_topic_news_name')]",
+                        "properties":{  
+                            "datasource":{  
+                                "type":"Microsoft.ServiceBus/Topic",
+                                "properties":{  
+                                    "topicName": "[variables('sb_topic_news_name')]",
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8",
+                                    "Format": "lineSeparated"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sb_topic_sectors_name')]",
+                        "properties":{  
+                            "datasource":{  
+                                "type":"Microsoft.ServiceBus/Topic",
+                                "properties":{  
+                                    "topicName": "[variables('sb_topic_sectors_name')]",
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8",
+                                    "Format": "lineSeparated"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        
+        {
+            "comments": "### Create Stream Analytics Job for PowerBI - Inputs and Query ###",
+            "apiVersion": "2016-03-01",
+            "type": "Microsoft.StreamAnalytics/streamingjobs",
+            "name": "[variables('sa_pbi_name')]",
+            "location": "[variables('datacenter_location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_allquotes_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_companies_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_indices_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_news_name'))]",
+                "[concat('Microsoft.Servicebus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_sectors_name'))]"
+            ],
+            "properties": {
+                "sku": {
+                    "name": "standard"
+                },
+                "EventsOutOfOrderMaxDelayInSeconds": 5,
+                "EventsOutOfOrderPolicy": "drop",
+                "Inputs": [
+                    {
+                        "Name": "[variables('sa_pbi_input_companies_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_companies_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sa_pbi_input_indices_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_indices_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sa_pbi_input_news_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_news_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "[variables('sa_pbi_input_sectors_name')]",
+                        "Properties": {
+                            "Type": "stream",
+                            "DataSource": {
+                                "Type": "Microsoft.ServiceBus/EventHub",
+                                "Properties": {
+                                    "serviceBusNamespace": "[variables('service_bus_namespace_name')]",
+                                    "eventHubName": "[variables('eventhub_eh_sectors_name')]",
+                                    "sharedAccessPolicyKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                    "sharedAccessPolicyName": "[variables('shared_access_policy_name')]"
+                                }
+                            },
+                            "Serialization": {
+                                "Properties": {
+                                    "Encoding": "UTF8"
+                                },
+                                "Type": "Json"
+                            }
+                        }
+                    }
+                ],
+                "Transformation": {
+                    "Name": "companies",
+                    "Properties": {
+                        "Query": "[concat('SELECT EventEnqueuedUtcTime, Company.Name, Company.CurrentVal, Company.OpeningVal, Company.Code, Company.SectorCode, Company.PercentageChange, Count(*) as Count INTO [companies] FROM [', variables('sa_pbi_input_companies_name'), '] GROUP BY EventEnqueuedUtcTime, Company.Name, Company.CurrentVal, Company.OpeningVal, Company.Code, Company.SectorCode, Company.PercentageChange, TumblingWindow(mi,2) SELECT EventEnqueuedUtcTime, Indice.Name, Indice.CurrentVal, Indice.OpeningVal, Indice.Code, Indice.PercentageChange, Count(*) as Count INTO [indices] FROM [', variables('sa_pbi_input_indices_name'), '] GROUP BY EventEnqueuedUtcTime, Indice.Name, Indice.CurrentVal, Indice.OpeningVal, Indice.Code, Indice.PercentageChange, TumblingWindow(mi,2) SELECT EventEnqueuedUtcTime, NewsItem.Id, NewsItem.Headline, NewsItem.DateTime, Count(*) as Count INTO [news] FROM [', variables('sa_pbi_input_news_name'), '] GROUP BY EventEnqueuedUtcTime, NewsItem.Id, NewsItem.Headline, NewsItem.DateTime, TumblingWindow(mi,2) SELECT EventEnqueuedUtcTime, Sector.Name, Sector.Code, Sector.PercentageChange, Count(*) as Count INTO [sectors] FROM [', variables('sa_pbi_input_sectors_name'), '] GROUP BY EventEnqueuedUtcTime, Sector.Name, Sector.Code, Sector.PercentageChange, TumblingWindow(mi,2)')]"
+                    }
+                },
+                "Outputs": [
+                ]
+            }
+        }
+        
+    ],
+    
+    "outputs": {
+        "web_service_name": {
+            "type": "string",
+            "value": "[variables('web_service_name')]"
+        },
+        
+        "subdomain_prefix": {
+            "type": "string",
+            "value": "[parameters('demo_name')]"
+        },
+        
+        "web_service_host_name": {
+            "type": "string",
+            "value": "[reference(variables('web_service_resource_id')).hostNames[0]]"
+        },
+        
+        "sql_server_data_warehouse_name": {
+            "type": "string",
+            "value": "[variables('sql_server_dw_name')]"   
+        },
+        
+        "sql_server_name": {
+            "type": "string",
+            "value": "[variables('sql_server_name')]"
+        },
+        
+        "sql_server_fqdn": {
+            "type": "string",
+            "value": "[reference(variables('sql_server_resource_id')).fullyQualifiedDomainName]"
+        },
+        
+        "sql_server_database_name": {
+            "type": "string",
+            "value": "[variables('sql_server_db_name')]"
+        },
+        
+        "sql_server_username": {
+            "type": "string",
+            "value": "[variables('sql_server_username')]"
+        },
+        
+        "sql_server_fq_username": {
+            "type": "string",
+            "value": "[concat(variables('sql_server_username'), '@', variables('sql_server_name'))]"
+        },
+        
+        "sql_server_password": {
+            "type": "string",
+            "value": "[variables('sql_server_password')]"
+        },
+        
+        "virtual_machine_name": {
+            "type": "string",
+            "value": "[variables('vm_name')]"  
+        },
+        
+        "virtual_machine_username": {
+            "type": "string",
+            "value": "[variables('vm_admin_username')]"
+        },
+        
+        "virtual_machine_password": {
+            "type": "string",
+            "value": "[variables('vm_admin_password')]"
+        },
+        
+        "stream_analytics_job_name_for_power_bi": {
+            "type": "string",
+            "value": "[variables('sa_pbi_name')]"
+        },
+        
+        "blob_store_for_data_lake_connection_string": {
+            "type": "string",
+            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('blob_data_store_account_name'),';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('blob_data_store_account_name')), '2015-06-15').key1)]"
+        },
+        
+        "namespace_connection_string": {  
+            "type":"string",
+            "value":"[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryConnectionString]"
+        },
+      
+        "shared_access_policy_primary_key": {  
+            "type":"string",
+            "value":"[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]"
+        }
+      
+    }
+}
