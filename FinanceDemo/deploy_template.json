@@ -132,38 +132,7 @@
         "vm_virtual_network_subnet_ref": "[concat(variables('vm_virtual_network_id'), '/subnets/', variables('vm_virtual_network_subnet_name'))]"
     },
     "resources": [ 
-        {
-            "comments": "### Generate Primary SAS Key ###",
-            "apiVersion": "2015-01-01",
-            "name": "[variables('service_bus_primary_sas')]",
-            "type": "Microsoft.Resources/deployments",
-            "properties": {
-                "mode": "incremental",
-                "templateLink": {
-                    "uri": "[variables('key_generator_template_uri')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "seed": { "value": "1234a5" }
-                }
-            }
-        },
-        {
-            "comments": "### Generate Secondary SAS Key ###",
-            "apiVersion": "2015-01-01",
-            "name": "[variables('service_bus_secondary_sas')]",
-            "type": "Microsoft.Resources/deployments",
-            "properties": {
-                "mode": "incremental",
-                "templateLink": {
-                    "uri": "[variables('key_generator_template_uri')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "seed": { "value": "ac34a5" }
-                }
-            }
-        },  
+         
         {  
             "comments": "### Create Virtual Network for VM ###",
             "name":"[variables('vm_virtual_network_name')]",
@@ -789,9 +758,7 @@
             "type": "Microsoft.Web/sites",
             "location": "[variables('datacenter_location')]",
             "dependsOn": [
-                "[variables('web_service_hosting_plan_resource_id')]",
-                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                "[variables('web_service_hosting_plan_resource_id')]"
             ],
             "properties": {
                 "serverFarmId": "[variables('web_service_hosting_plan_name')]",
@@ -823,7 +790,7 @@
                     "properties": {
                         "MobileAppsManagement_EXTENSION_VERSION": "latest",
                         "Finance.ServiceName": "[parameters('demo_name')]",
-                        "Finance.SharedAccessKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
+                        "Finance.SharedAccessKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
                         "Finance.ServerConfigurationKey": "F0F21302-EA33-46B2-9F32-B2994C78D323",
                         "Finance.ClientConfigurationKey": "9F3BC371-5901-4712-A145-A38606F7B877",
                         "FInance.UpdateIntervalSeconds": "5",
@@ -862,17 +829,15 @@
                     "name": "[concat(variables('service_bus_namespace_name'),'/SharedAccess')]",
                     "type": "Microsoft.ServiceBus/namespaces/authorizationRules",
                     "dependsOn": [
-                        "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
-                        "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                        "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                        "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]"
                     ],
                     "location": "[variables('datacenter_location')]",
                     "properties": {
                         "KeyName": "[variables('shared_access_policy_name')]",
                         "ClaimType": "SharedAccessKey",
                         "ClaimValue": "None",
-                        "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
-                        "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                        "PrimaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                        "SecondaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).secondaryKey]",
                         "Rights": [ "Send", "Manage", "Listen" ],
                         "Revision": -1
                     }
@@ -899,17 +864,15 @@
                             "type": "AuthorizationRules",
                             "dependsOn": [
                                 "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_name'))]",
-                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]"
                             ],
                             "location": "[variables('datacenter_location')]",
                             "properties": {
                                 "KeyName": "[concat('accessfor', variables('eventhub_eh_name'))]",
                                 "ClaimType": "SharedAccessKey",
                                 "ClaimValue": "None",
-                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
-                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "PrimaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                "SecondaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).secondaryKey]",
                                 "Rights": [ "Send", "Manage", "Listen" ],
                                 "Revision": -1
                             }
@@ -938,17 +901,15 @@
                             "type": "AuthorizationRules",
                             "dependsOn": [
                                 "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_allquotes_name'))]",
-                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]"
                             ],
                             "location": "[variables('datacenter_location')]",
                             "properties": {
                                 "KeyName": "[concat('accessfor', variables('eventhub_eh_allquotes_name'))]",
                                 "ClaimType": "SharedAccessKey",
                                 "ClaimValue": "None",
-                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
-                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "PrimaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                "SecondaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).secondaryKey]",
                                 "Rights": [ "Send", "Manage", "Listen" ],
                                 "Revision": -1
                             }
@@ -977,17 +938,15 @@
                             "type": "AuthorizationRules",
                             "dependsOn": [
                                 "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_companies_name'))]",
-                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]"
                             ],
                             "location": "[variables('datacenter_location')]",
                             "properties": {
                                 "KeyName": "[concat('accessfor', variables('eventhub_eh_companies_name'))]",
                                 "ClaimType": "SharedAccessKey",
                                 "ClaimValue": "None",
-                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
-                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "PrimaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                "SecondaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).secondaryKey]",
                                 "Rights": [ "Send", "Manage", "Listen" ],
                                 "Revision": -1
                             }
@@ -1016,17 +975,15 @@
                             "type": "AuthorizationRules",
                             "dependsOn": [
                                 "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_indices_name'))]",
-                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]"
                             ],
                             "location": "[variables('datacenter_location')]",
                             "properties": {
                                 "KeyName": "[concat('accessfor', variables('eventhub_eh_indices_name'))]",
                                 "ClaimType": "SharedAccessKey",
                                 "ClaimValue": "None",
-                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
-                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "PrimaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                "SecondaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).secondaryKey]",
                                 "Rights": [ "Send", "Manage", "Listen" ],
                                 "Revision": -1
                             }
@@ -1048,28 +1005,6 @@
                         "PartitionCount": 4
                     },
                     "resources": [
-                        {
-                            "comments": "### Configure Shared Access Policy ###",
-                            "apiVersion": "[variables('service_bus_api_version')]",
-                            "name": "[concat('accessfor', variables('eventhub_eh_news_name'))]",
-                            "type": "AuthorizationRules",
-                            "dependsOn": [
-                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_news_name'))]",
-                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
-                            ],
-                            "location": "[variables('datacenter_location')]",
-                            "properties": {
-                                "KeyName": "[concat('accessfor', variables('eventhub_eh_news_name'))]",
-                                "ClaimType": "SharedAccessKey",
-                                "ClaimValue": "None",
-                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
-                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
-                                "Rights": [ "Send", "Manage", "Listen" ],
-                                "Revision": -1
-                            }
-                        }
                     ]
                 },
                 {  
@@ -1094,17 +1029,15 @@
                             "type": "AuthorizationRules",
                             "dependsOn": [
                                 "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'), '/eventHubs/', variables('eventhub_eh_sectors_name'))]",
-                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_primary_sas'))]",
-                                "[concat('Microsoft.Resources/deployments/', variables('service_bus_secondary_sas'))]"
+                                "[concat('Microsoft.ServiceBus/namespaces/', variables('service_bus_namespace_name'))]"
                             ],
                             "location": "[variables('datacenter_location')]",
                             "properties": {
                                 "KeyName": "[concat('accessfor', variables('eventhub_eh_sectors_name'))]",
                                 "ClaimType": "SharedAccessKey",
                                 "ClaimValue": "None",
-                                "PrimaryKey": "[reference(variables('service_bus_primary_sas')).outputs.key.value]",
-                                "SecondaryKey": "[reference(variables('service_bus_secondary_sas')).outputs.key.value]",
+                                "PrimaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).primaryKey]",
+                                "SecondaryKey": "[listkeys(variables('auth_rule_resource_id'), variables('service_bus_api_version')).secondaryKey]",
                                 "Rights": [ "Send", "Manage", "Listen" ],
                                 "Revision": -1
                             }
