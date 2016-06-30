@@ -426,9 +426,99 @@ else {
     }
 }
 
-#----------------$
+#-----------------------------#
+# Build Data Warehouse Tables #
+#-----------------------------#
+
+
+$sqldw_scripts = @(
+    "$script_dir\sql_scripts\sqldw_tables.sql",
+    "$script_dir\sql_scripts\sqldw_procs.sql"
+)
+
+$sqldw_server          = $OUTPUTS['sqldw_server_fqdn']
+$sqldw_server_username = $OUTPUTS['sqldw_server_fq_username']
+$sqldw_server_password = $OUTPUTS['sqldw_server_password']
+$sqldw_server_database = $OUTPUTS['sqldw_server_database_name']
+
+$msg = 'You may like to wait a few minutes before continuing to ensure that the Data Warehouse Server is ready.
+If you would like to deploy the database manually then press [S] and follow the on-screen instructions'; 
+
+if ((Confirm-Host -Title 'Deploy data warehouse tables?' -Message $msg -Options @('&Deploy', '&Skip')) -eq 1) {
+    
+    # User skipped
+    Write-Host 'You may manually deploy the database by connecting to the database with the following credentials;'
+    Write-Host "`tServer Name: $sqldw_server"
+    Write-Host "`tUsername: $sqldw_server_username"
+    Write-Host "`tPassword: $sqldw_server_password"
+    Write-Host "`tDatabase: $sqldw_server_database"
+    Write-Host 'And executing the following scripts:'
+    foreach ($script_path in $sqldw_scripts) {
+        Write-Host "`t$script_path"
+    } 
+}
+else {
+    
+    Write-Host 'Executing database bootstrap scripts (this may take some time)'
+
+    $sqldw_timeout_seconds = [int] [TimeSpan]::FromMinutes(8).TotalSeconds 
+    $sqldw_connection_timeout_seconds = [int] [TimeSpan]::FromMinutes(2).TotalSeconds
+
+    Push-Location
+    try {
+        foreach ($script_path in $sqldw_scripts) {
+            Write-Host "Executing $script_path"
+            Invoke-Sqlcmd -ServerInstance $sqldw_server -Username $sqldw_server_username -Password $sqldw_server_password -Database $sqldw_server_database -InputFile $script_path -QueryTimeout $sqldw_timeout_seconds -ConnectionTimeout $sqldw_connection_timeout_seconds
+        }
+    }
+    catch {
+        Write-Warning "Error executing $sqldw_script (consider executing manually)`n$($_.Exception)"
+    }
+    finally {
+        # Work around Invoke-Sqlcmd randomly changing the working directory
+        Pop-Location
+    }
+}
+
+#--------------------------------------------------#
+# Now that the databases have been built:          #
+# Start resource group deployment for Data Factory #
+#--------------------------------------------------#
+
+Write-Host 'Starting resource group deployment for Data Factory'
+
+$template = "$script_dir\deploy_template_df.json"
+
+$params = @{
+    'demo_name'                         = $DemoName;
+    'global_suffix'                     = $global_name_suffix;
+    'datacenter_location'               = $Region;
+    'sql_server_name'                   = $OUTPUTS['sql_server_name'];
+    'sqldw_server_name'                 = $OUTPUTS['sqldw_server_name'];
+    'sql_server_db_name'                = $OUTPUTS['sql_server_database_name'];
+    'sql_server_dw_name'                = $OUTPUTS['sqldw_server_database_name'];
+    'sql_server_username'               = $OUTPUTS['sql_server_username'];
+    'sqldw_server_username'             = $OUTPUTS['sqldw_server_username'];
+    'sql_server_password'               = $OUTPUTS['sql_server_password'];
+    'sqldw_server_password'             = $OUTPUTS['sqldw_server_password'];
+
+    # All required config keys
+}
+
+$result = New-AzureRmResourceGroupDeployment -ResourceGroupName $rm_resource_group_name -TemplateFile $template -TemplateParameterObject $params -Verbose
+
+if (-not $result -or $result.ProvisioningState -ne 'Succeeded') {
+    Write-Warning 'An error occured during provisioning'
+    Write-Output $result
+    return
+}
+
+# Don't print outputs from data factory deployment - it's unlikely that they'll
+# be useful.
+
+#----------------#
 # Report results #
-#----------------$
+#----------------#
 
 Write-Host "Deployment Successful. Writing output variables..."
 

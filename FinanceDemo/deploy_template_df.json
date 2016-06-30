@@ -1,0 +1,414 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        
+        "demo_name": {
+            "type": "string"
+        },
+        
+        "global_suffix": {
+            "type": "string"
+        },
+
+        "datacenter_location": {
+            "type": "string"
+        },
+
+        "sql_server_name": {
+            "type": "string"
+        },
+        
+        "sqldw_server_name": {
+            "type": "string"
+        },
+        
+        "sql_server_db_name": {
+            "type": "string"
+        },
+        
+        "sql_server_dw_name": {
+            "type": "string"
+        },
+        
+        "sql_server_username": {
+            "type": "string"
+        },
+        
+        "sqldw_server_username": {
+            "type": "string"
+        },
+        
+        "sql_server_password": {
+            "type": "string"
+        },
+        
+        "sqldw_server_password": {
+            "type": "string"
+        },
+        
+    },
+    "variables": {
+        
+        "datacenter_location": "[parameters('datacenter_location')]",
+        
+        "sql_server_name": "[parameters('sql_server_name')]",
+        "sql_server_username": "[parameters('sql_server_username')]",
+        "sql_server_password": "[parameters('sql_server_password')]",
+
+        "sqldw_server_name": "[parameters('sqldw_server_name')]",
+        "sqldw_server_username": "[parameters('sqldw_server_username')]",
+        "sqldw_server_password": "[parameters('sqldw_server_password')]",
+        
+        "sql_server_db_name": "ntfindemosqldb0630",
+        "sql_server_dw_name": "ntfindemosqldw0630",
+        
+        "data_factory_name": "[concat(parameters('demo_name'), 'df', parameters('global_suffix'))]",    
+        "data_factory_version": "2015-09-01",
+        "data_factory_sqldw_linked_service_name": "[concat(parameters('demo_name'), 'sqldwLinkedService', parameters('global_suffix'))]",
+        "data_factory_sqldb_linked_service_name": "[concat(parameters('demo_name'), 'sqldbLinkedService', parameters('global_suffix'))]",
+        "data_factory_sqldb_input_table_prefix": "[concat(parameters('demo_name'), parameters('global_suffix'))]",
+        "data_factory_sqldw_output_table_prefix": "[concat(parameters('demo_name'), parameters('global_suffix'))]",
+        "data_factory_pipeline_prefix": "[concat(parameters('demo_name'), 'db2dwPipeline', parameters('global_suffix'))]"
+    },
+    "resources": [ 
+         
+        {
+            "comments": "### Create Data Factory ###",
+            "name": "[variables('data_factory_name')]",
+            "apiVersion": "[variables('data_factory_version')]",
+            "type": "Microsoft.DataFactory/datafactories",
+            "location": "[variables('datacenter_location')]",
+            "dependsOn": [
+            ],
+            "resources": [
+                {
+                    "comments": "### Output linked service (SQL DW) ###",
+                    "dependsOn": [ 
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]" 
+                        ],
+                    "type": "linkedservices",
+                    "name": "[variables('data_factory_sqldw_linked_service_name')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDW",
+                        "typeProperties": {
+                            "connectionString": "[concat('Server=tcp:',variables('sqldw_server_name'),'.database.windows.net,1433;Database=', variables('sql_server_dw_name'), ';User ID=',variables('sqldw_server_username'),';Password=',variables('sqldw_server_password'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Input linked service (SQL DB) ###",
+                    "dependsOn": [ 
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]" 
+                        ],
+                    "type": "linkedservices",
+                    "name": "[variables('data_factory_sqldb_linked_service_name')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDatabase",
+                        "typeProperties": {
+                            "connectionString": "[concat('Server=tcp:',variables('sql_server_name'),'.database.windows.net,1433;Database=', variables('sql_server_db_name'), ';User ID=',variables('sql_server_username'),';Password=',variables('sql_server_password'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Input table Source Nasdaq Listed Load ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlTable",
+                        "linkedServiceName": "[variables('data_factory_sqldb_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Nasdaq_Listed_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        },
+                        "external": true,
+                        "policy": {
+                            "externalData": {
+                                "retryInterval": "00:00:30",
+                                "retryTimeout": "00:05:00",
+                                "maximumRetry": 3
+                            }
+                        }
+                    }
+                },
+                {
+                    "comments": "### Input table Source Stocks ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlTable",
+                        "linkedServiceName": "[variables('data_factory_sqldb_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Stocks_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        },
+                        "external": true,
+                        "policy": {
+                            "externalData": {
+                                "retryInterval": "00:00:30",
+                                "retryTimeout": "00:05:00",
+                                "maximumRetry": 3
+                            }
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _Destin_Nasdaq_Listed_Load ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Nasdaq_Listed_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _Destin_Stocks_Load ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Stocks_Load"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _FinalDestin_Nasdaq_Listed ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Nasdaq_Listed')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Nasdaq_Listed"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Output table _FinalDestin_Stocks ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
+                    ],
+                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Stocks')]",
+                    "type": "datasets",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "type": "AzureSqlDWTable",
+                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
+                        "typeProperties": {
+                            "tableName": "Stocks"
+                        },
+                        "availability": {
+                            "frequency": "Minute",
+                            "interval": 30,
+                            "anchorDateTime": "0001-01-01T04:00:00Z"
+                        }
+                    }
+                },
+                {
+                    "comments": "### Nasdaq Listed Pipeline ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]"
+                    ],
+                    "type": "datapipelines",
+                    "name": "[concat(variables('data_factory_pipeline_prefix'), '_Nasdaq_Listed_Pipleine')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "description": "CopyActivity",
+                        "activities": [
+                            {
+                                "name": "CopyFromDBToDW",
+                                "description": "Push from DB to DW",
+                                "type": "Copy",
+                                "inputs": [ { "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]" } ],
+                                "outputs": [ { "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]" } ],
+                                "typeProperties": {
+                                    "source": {
+                                        "type": "AzureTableSource"
+                                    },
+                                    "sink": {
+                                        "type": "SqlSink",
+                                        "writeBatchSize": 10000,
+                                        "writeBatchTimeout": "60.00:00:00"
+                                    }
+                                },
+                                "policy": {
+                                    "timeout": "01:00:00",
+                                    "concurrency": 1,
+                                    "executionPriorityOrder": "NewestFirst"
+                                },
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                }
+                            },
+                            {
+                                "type": "SqlServerStoredProcedure",
+                                "typeProperties": {
+                                    "storedProcedureName": "sp_insert_stocks"
+                                },
+                                "inputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]"
+                                    }
+                                ],
+                                "outputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Stocks')]"
+                                    }
+                                ],
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                },
+                                "name": "SQLSPROCActivity",
+                                "description": "description"
+                            }
+                        ],
+                        "start": "2016-05-03T23:00:00Z",
+                        "end": "2017-12-31T00:00:00Z",
+                        "isPaused": false,
+                        "pipelineMode": "Scheduled"
+                    }
+                },
+                {
+                    "comments": "### Stocks Pipeline ###",
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]",
+                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]"
+                    ],
+                    "type": "datapipelines",
+                    "name": "[concat(variables('data_factory_pipeline_prefix'), '_Stocks_Pipleine')]",
+                    "apiVersion": "[variables('data_factory_version')]",
+                    "properties": {
+                        "description": "CopyActivity",
+                        "activities": [
+                            {
+                                "name": "CopyFromDBToDW",
+                                "description": "Push from DB to DW",
+                                "type": "Copy",
+                                "inputs": [ { "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]" } ],
+                                "outputs": [ { "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]" } ],
+                                "typeProperties": {
+                                    "source": {
+                                        "type": "AzureTableSource"
+                                    },
+                                    "sink": {
+                                        "type": "SqlSink",
+                                        "writeBatchSize": 10000,
+                                        "writeBatchTimeout": "60.00:00:00"
+                                    }
+                                },
+                                "policy": {
+                                    "timeout": "01:00:00",
+                                    "concurrency": 1,
+                                    "executionPriorityOrder": "NewestFirst"
+                                },
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                }
+                            },
+                            {
+                                "type": "SqlServerStoredProcedure",
+                                "typeProperties": {
+                                    "storedProcedureName": "sp_insert_nasdaq_Listed"
+                                },
+                                "inputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]"
+                                    }
+                                ],
+                                "outputs": [
+                                    {
+                                        "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Nasdaq_Listed')]"
+                                    }
+                                ],
+                                "scheduler": {
+                                    "frequency": "Minute",
+                                    "interval": 30,
+                                    "anchorDateTime": "0001-01-01T04:00:00Z"
+                                },
+                                "name": "SQLSPROCActivity",
+                                "description": "description"
+                            }
+                        ],
+                        "start": "2016-05-03T23:00:00Z",
+                        "end": "2017-12-31T00:00:00Z",
+                        "isPaused": false,
+                        "pipelineMode": "Scheduled"
+                    }
+                }
+            ]
+        }
+    ],
+    
+    "outputs": {
+      
+    }
+}

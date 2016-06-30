@@ -86,163 +86,26 @@
         "sa_pbi_input_indices_name": "[concat(parameters('demo_name'), 'pbi-indices')]",
         "sa_pbi_input_news_name": "[concat(parameters('demo_name'), 'pbi-news')]",
         "sa_pbi_input_sectors_name": "[concat(parameters('demo_name'), '-sectors')]",
-
-        "sa_output_start_mode": "JobStartTime",
         
         "sql_server_name": "[concat(parameters('demo_name'), 'svr', parameters('global_suffix'))]",
         "sql_server_resource_id": "[concat('Microsoft.Sql/servers/', variables('sql_server_name'))]",
         "sql_server_username": "[parameters('demo_name')]",
         "sql_server_password": "Pa55w0rd",
+
+        "sqldw_server_name": "[concat(parameters('demo_name'), 'dwsvr', parameters('global_suffix'))]",
+        "sqldw_server_resource_id": "[concat('Microsoft.Sql/servers/', variables('sqldw_server_name'))]",
+        "sqldw_server_username": "[parameters('demo_name')]",
+        "sqldw_server_password": "Pa55w0rd",
         
         "sql_server_db_name": "ntfindemosqldb0630",
         "sql_server_dw_name": "ntfindemosqldw0630",
         
-        "data_factory_name": "[concat(parameters('demo_name'), 'df', parameters('global_suffix'))]",    
-        "data_factory_version": "2015-09-01",
-        "data_factory_sqldw_linked_service_name": "[concat(parameters('demo_name'), 'sqldwLinkedService', parameters('global_suffix'))]",
-        "data_factory_sqldb_linked_service_name": "[concat(parameters('demo_name'), 'sqldbLinkedService', parameters('global_suffix'))]",
-        "data_factory_sqldb_input_table_prefix": "[concat(parameters('demo_name'), parameters('global_suffix'))]",
-        "data_factory_sqldw_output_table_prefix": "[concat(parameters('demo_name'), parameters('global_suffix'))]",
-        "data_factory_pipeline_prefix": "[concat(parameters('demo_name'), 'db2dwPipeline', parameters('global_suffix'))]",
-
-        "vm_storage_account_name": "[concat(parameters('demo_name'), 'vmstorage', parameters('global_suffix'))]",
-        "vm_storage_account_type": "Standard_LRS",
-        "vm_storage_account_id": "[resourceId('Microsoft.Storage/storageAccounts', variables('vm_storage_account_name'))]",
-        
         "blob_data_store_account_name": "[concat(parameters('demo_name'), 'blobstorage', parameters('global_suffix'))]",
         "blob_data_store_account_type": "Standard_LRS",
         "blob_data_store_account_Id": "[resourceId('Microsoft.Storage/storageAccounts', variables('blob_data_store_account_name'))]",
-        
-        "vm_name": "[concat(parameters('demo_name'), 'vm', parameters('global_suffix'))]",
-        "vm_size": "Standard_A3",
-        "vm_admin_username": "[parameters('demo_name')]",
-        "vm_admin_password": "Pa55w0rd",
-        
-        "vm_public_ip_name": "[concat(parameters('demo_name'), 'public-ip', parameters('global_suffix'))]",
-        "vm_public_ip_type": "Dynamic",
-        
-        "vm_network_security_group_name": "[concat(parameters('demo_name'), 'securitygroup', parameters('global_suffix'))]",
-        "vm_virtual_network_name": "[concat(parameters('demo_name'), 'virtualnetwork', parameters('global_suffix'))]",
-        "vm_virtual_network_prefix": "10.0.0.0/16",
-        "vm_virtual_network_subnet_prefix": "10.0.0.0/24",
-        "vm_virtual_network_subnet_name": "default",
-        "vm_network_interface_name": "[concat(parameters('demo_name'), 'nic', parameters('global_suffix'))]",
-        
-        "vm_virtual_network_id": "[resourceId(resourceGroup().Name,'Microsoft.Network/virtualNetworks', variables('vm_virtual_network_name'))]",
-        "vm_virtual_network_subnet_ref": "[concat(variables('vm_virtual_network_id'), '/subnets/', variables('vm_virtual_network_subnet_name'))]"
     },
     "resources": [ 
          
-        {  
-            "comments": "### Create Virtual Network for VM ###",
-            "name":"[variables('vm_virtual_network_name')]",
-            "type":"Microsoft.Network/virtualNetworks",
-            "apiVersion":"2015-06-15",
-            "location": "[variables('datacenter_location')]",
-            "properties":{  
-                "addressSpace":{  
-                "addressPrefixes":[  
-                        "[variables('vm_virtual_network_prefix')]"
-                    ]
-                },
-                "subnets":[  
-                    {  
-                        "name":"[variables('vm_virtual_network_subnet_name')]",
-                        "properties":{  
-                            "addressPrefix":"[variables('vm_virtual_network_subnet_prefix')]"
-                        }
-                    }
-                ]
-            }
-        },
-        {  
-            "comments": "### Create Public IP for VM ###",
-            "name":"[variables('vm_public_ip_name')]",
-            "type":"Microsoft.Network/publicIpAddresses",
-            "apiVersion":"2015-06-15",
-            "location": "[variables('datacenter_location')]",
-            "properties":{  
-                "publicIpAllocationMethod":"[variables('vm_public_ip_type')]"
-            }
-        },
-        {  
-            "comments": "### Create Network Security Group for VM ###",
-            "name":"[variables('vm_network_security_group_name')]",
-            "type":"Microsoft.Network/networkSecurityGroups",
-            "apiVersion":"2015-06-15",
-            "location": "[variables('datacenter_location')]",
-            "properties":{  
-                "securityRules":[  
-                    {  
-                        "name":"default-allow-rdp",
-                        "properties":{  
-                            "priority":1000,
-                            "sourceAddressPrefix":"*",
-                            "protocol":"Tcp",
-                            "destinationPortRange":"3389",
-                            "access":"Allow",
-                            "direction":"inbound",
-                            "sourcePortRange":"*",
-                            "destinationAddressPrefix":"*"
-                        }
-                    },
-                    {  
-                        "name":"default-allow-sql",
-                        "properties":{  
-                            "priority":1500,
-                            "sourceAddressPrefix":"*",
-                            "protocol":"Tcp",
-                            "destinationPortRange":"1433",
-                            "access":"Allow",
-                            "direction":"inbound",
-                            "sourcePortRange":"*",
-                            "destinationAddressPrefix":"*"
-                        }
-                    }
-                ]
-            }
-        },
-        {  
-            "comments": "### Create NIC for VM ###",
-            "name":"[variables('vm_network_interface_name')]",
-            "type":"Microsoft.Network/networkInterfaces",
-            "apiVersion":"2015-06-15",
-            "location": "[variables('datacenter_location')]",
-            "dependsOn":[  
-                "[concat('Microsoft.Network/virtualNetworks/', variables('vm_virtual_network_name'))]",
-                "[concat('Microsoft.Network/publicIpAddresses/', variables('vm_public_ip_name'))]",
-                "[concat('Microsoft.Network/networkSecurityGroups/', variables('vm_network_security_group_name'))]"
-            ],
-            "properties":{  
-                "ipConfigurations":[  
-                {  
-                    "name":"ipconfig1",
-                    "properties":{  
-                        "subnet":{  
-                            "id":"[variables('vm_virtual_network_subnet_ref')]"
-                        },
-                        "privateIPAllocationMethod":"Dynamic",
-                        "publicIpAddress":{  
-                            "id":"[resourceId(resourceGroup().Name,'Microsoft.Network/publicIpAddresses', variables('vm_public_ip_name'))]"
-                        }
-                    }
-                }
-                ],
-                "networkSecurityGroup":{  
-                "id":"[resourceId(resourceGroup().Name, 'Microsoft.Network/networkSecurityGroups', variables('vm_network_security_group_name'))]"
-                }
-            }
-        },
-        {  
-            "comments": "### Create Storage Account for VM ###",
-            "name":"[variables('vm_storage_account_name')]",
-            "type":"Microsoft.Storage/storageAccounts",
-            "apiVersion":"2015-06-15",
-            "location": "[variables('datacenter_location')]",
-            "properties":{  
-                "accountType":"[variables('vm_storage_account_type')]"
-            }
-        },
         {  
             "comments": "### Create Storage Account for SQL on VM to push data out to, prior to pushing into Azure Data Lake. ###",
             "name":"[variables('blob_data_store_account_name')]",
@@ -253,81 +116,13 @@
                 "accountType":"[variables('blob_data_store_account_type')]"
             }
         },
-        {  
-            "comments": "### Create VM for SQL 2016 ###",
-            "name":"[variables('vm_name')]",
-            "type":"Microsoft.Compute/virtualMachines",
-            "apiVersion":"2015-06-15",
-            "location": "[variables('datacenter_location')]",
-            "dependsOn":[  
-                "[concat('Microsoft.Network/networkInterfaces/', variables('vm_network_interface_name'))]",
-                "[concat('Microsoft.Storage/storageAccounts/', variables('vm_storage_account_name'))]"
-            ],
-            "properties":{  
-                "osProfile":{  
-                "computerName":"[variables('vm_name')]",
-                "adminUsername":"[variables('vm_admin_username')]",
-                "adminPassword":"[variables('vm_admin_password')]",
-                "windowsConfiguration":{  
-                    "provisionVmAgent":"true"
-                }
-                },
-                "hardwareProfile":{  
-                "vmSize":"[variables('vm_size')]"
-                },
-                "storageProfile":{  
-                "imageReference":{  
-                    "publisher":"MicrosoftSQLServer",
-                    "offer":"SQL2016-WS2012R2",
-                    "sku":"Enterprise",
-                    "version":"latest"
-                },
-                "osDisk":{  
-                    "name":"[variables('vm_name')]",
-                    "vhd":{  
-                        "uri":"[concat(concat(reference(resourceId(resourceGroup().Name, 'Microsoft.Storage/storageAccounts', variables('vm_storage_account_name')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), variables('vm_name'), '201624135551.vhd')]"
-                    },
-                    "createOption":"fromImage"
-                },
-                "dataDisks": [  
-                    {  
-                        "name":"[concat(variables('vm_name'), '-disk-1')]",
-                        "vhd":{  
-                            "uri":"[concat(concat(reference(resourceId(resourceGroup().Name, 'Microsoft.Storage/storageAccounts', variables('vm_storage_account_name')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), variables('vm_name'), '-disk-1-201624135551', '.vhd')]"
-                        },
-                        "createOption":"empty",
-                        "lun":0,
-                        "diskSizeGB":"1023",
-                        "caching":"ReadOnly"
-                    },
-                    {  
-                        "name":"[concat(variables('vm_name'), '-disk-2')]",
-                        "vhd":{  
-                            "uri":"[concat(concat(reference(resourceId(resourceGroup().Name, 'Microsoft.Storage/storageAccounts', variables('vm_storage_account_name')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), variables('vm_name'), '-disk-2-201624135551', '.vhd')]"
-                        },
-                        "createOption":"empty",
-                        "lun":1,
-                        "diskSizeGB":"1023",
-                        "caching":"ReadOnly"
-                    }
-                ]
-                },
-                "networkProfile":{  
-                "networkInterfaces":[  
-                    {  
-                        "id":"[resourceId('Microsoft.Network/networkInterfaces', variables('vm_network_interface_name'))]"
-                    }
-                ]
-                }
-            }
-        },
         {
             "comments": "### Create Azure SQL Server ###",
             "name": "[variables('sql_server_name')]",
             "type": "Microsoft.Sql/servers",
             "location": "[variables('datacenter_location')]",
             "tags": {
-                "displayName": "[variables('sql_server_name')]"
+                "displayName": "SqlServer"
             },
             "apiVersion": "2014-04-01-preview",
             "properties": {
@@ -336,7 +131,6 @@
                 "version": "12.0"
             },
             "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('vm_name'))]"
             ],
             "resources": [
                 {
@@ -345,32 +139,18 @@
                     "type": "databases",
                     "location": "[variables('datacenter_location')]",
                     "tags": {
-                        "displayName": "[variables('sql_server_db_name')]"
+                        "displayName": "Database"
                     },
                     "apiVersion": "2014-04-01-preview",
                     "dependsOn": [
-                        "[variables('sql_server_resource_id')]"
+                        "[concat('Microsoft.Sql/servers/', variables('sql_server_name'))]"
                     ],
                     "properties": {
-                        "edition": "Standard",
+                        "edition": "Basic",
                         "collation": "SQL_Latin1_General_CP1_CI_AS",
                         "maxSizeBytes": "1073741824",
-                        "requestedServiceObjectiveName": "S3"
+                        "requestedServiceObjectiveName": "Basic"
                     }
-                },
-                {
-                    "comments": "### Create SQL Data Warehouse ###",
-                    "name": "[variables('sql_server_dw_name')]",
-                    "type": "databases",
-                    "kind": "v12.0,user,datawarehouse",
-                    "apiVersion": "2014-04-01-preview",
-                    "location": "[variables('datacenter_location')]",
-                    "properties": {
-                        "edition": "DataWarehouse"
-                    },
-                    "dependsOn": [
-                        "[variables('sql_server_resource_id')]"
-                    ]
                 },
                 {
                     "comments": "### FIREWALL (AZURE) ###",
@@ -403,337 +183,62 @@
             ]
         },
         {
-            "comments": "### Create Data Factory ###",
-            "name": "[variables('data_factory_name')]",
-            "apiVersion": "[variables('data_factory_version')]",
-            "type": "Microsoft.DataFactory/datafactories",
+            "comments": "### Create Azure SQL Server for SQL Data Warehouse ###",
+            "name": "[variables('sqldw_server_name')]",
+            "type": "Microsoft.Sql/servers",
             "location": "[variables('datacenter_location')]",
+            "tags": {
+                "displayName": "SqlServer"
+            },
+            "apiVersion": "2014-04-01-preview",
+            "properties": {
+                "administratorLogin": "[variables('sqldw_server_username')]",
+                "administratorLoginPassword": "[variables('sqldw_server_password')]",
+                "version": "12.0"
+            },
             "dependsOn": [
-                "[concat('Microsoft.Sql/servers/', variables('sql_server_name'))]",
-                "[concat('Microsoft.Sql/servers/', variables('sql_server_name'), '/databases/', variables('sql_server_db_name'))]",
-                "[concat('Microsoft.Sql/servers/', variables('sql_server_name'), '/databases/', variables('sql_server_dw_name'))]"
             ],
             "resources": [
                 {
-                    "comments": "### Output linked service (SQL DW) ###",
-                    "dependsOn": [ 
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]" 
-                        ],
-                    "type": "linkedservices",
-                    "name": "[variables('data_factory_sqldw_linked_service_name')]",
-                    "apiVersion": "[variables('data_factory_version')]",
+                    "comments": "### Create SQL Data Warehouse ###",
+                    "name": "[variables('sql_server_dw_name')]",
+                    "type": "databases",
+                    "kind": "v12.0,user,datawarehouse",
+                    "apiVersion": "2014-04-01-preview",
+                    "location": "[variables('datacenter_location')]",
                     "properties": {
-                        "type": "AzureSqlDW",
-                        "typeProperties": {
-                            "connectionString": "[concat('Server=tcp:',variables('sql_server_name'),'.database.windows.net,1433;Database=', variables('sql_server_dw_name'), ';User ID=',variables('sql_server_username'),';Password=',variables('sql_server_password'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]"
-                        }
-                    }
-                },
-                {
-                    "comments": "### Input linked service (SQL DB) ###",
-                    "dependsOn": [ 
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]" 
-                        ],
-                    "type": "linkedservices",
-                    "name": "[variables('data_factory_sqldb_linked_service_name')]",
-                    "apiVersion": "[variables('data_factory_version')]",
-                    "properties": {
-                        "type": "AzureSqlDatabase",
-                        "typeProperties": {
-                            "connectionString": "[concat('Server=tcp:',variables('sql_server_name'),'.database.windows.net,1433;Database=', variables('sql_server_db_name'), ';User ID=',variables('sql_server_username'),';Password=',variables('sql_server_password'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]"
-                        }
-                    }
-                },
-                {
-                    "comments": "### Input table Source Nasdaq Listed Load ###",
+                        "edition": "DataWarehouse"
+                    },
                     "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]"
+                        "[variables('sqldw_server_resource_id')]"
+                    ]
+                },
+                {
+                    "comments": "### FIREWALL (AZURE) ###",
+                    "apiVersion": "2014-04-01-preview",
+                    "type": "firewallrules",
+                    "name": "AllowAllWindowsAzureIps",
+                    "location": "[variables('datacenter_location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('sqldw_server_name'))]"
                     ],
-                    "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]",
-                    "type": "datasets",
-                    "apiVersion": "[variables('data_factory_version')]",
                     "properties": {
-                        "type": "AzureSqlTable",
-                        "linkedServiceName": "[variables('data_factory_sqldb_linked_service_name')]",
-                        "typeProperties": {
-                            "tableName": "Nasdaq_Listed_Load"
-                        },
-                        "availability": {
-                            "frequency": "Minute",
-                            "interval": 30,
-                            "anchorDateTime": "0001-01-01T04:00:00Z"
-                        },
-                        "external": true,
-                        "policy": {
-                            "externalData": {
-                                "retryInterval": "00:00:30",
-                                "retryTimeout": "00:05:00",
-                                "maximumRetry": 3
-                            }
-                        }
+                        "endIpAddress": "0.0.0.0",
+                        "startIpAddress": "0.0.0.0"
                     }
                 },
                 {
-                    "comments": "### Input table Source Stocks ###",
+                    "comments": "### FIREWALL (LOCAL MACHINE) ###",
+                    "apiVersion": "2014-04-01-preview",
+                    "type": "firewallrules",
+                    "name": "AllowLocalMachineExternalIp",
+                    "location": "[variables('datacenter_location')]",
                     "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]"
+                        "[concat('Microsoft.Sql/servers/', variables('sqldw_server_name'))]"
                     ],
-                    "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]",
-                    "type": "datasets",
-                    "apiVersion": "[variables('data_factory_version')]",
                     "properties": {
-                        "type": "AzureSqlTable",
-                        "linkedServiceName": "[variables('data_factory_sqldb_linked_service_name')]",
-                        "typeProperties": {
-                            "tableName": "Stocks_Load"
-                        },
-                        "availability": {
-                            "frequency": "Minute",
-                            "interval": 30,
-                            "anchorDateTime": "0001-01-01T04:00:00Z"
-                        },
-                        "external": true,
-                        "policy": {
-                            "externalData": {
-                                "retryInterval": "00:00:30",
-                                "retryTimeout": "00:05:00",
-                                "maximumRetry": 3
-                            }
-                        }
-                    }
-                },
-                {
-                    "comments": "### Output table _Destin_Nasdaq_Listed_Load ###",
-                    "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
-                    ],
-                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]",
-                    "type": "datasets",
-                    "apiVersion": "[variables('data_factory_version')]",
-                    "properties": {
-                        "type": "AzureSqlDWTable",
-                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
-                        "typeProperties": {
-                            "tableName": "Nasdaq_Listed_Load"
-                        },
-                        "availability": {
-                            "frequency": "Minute",
-                            "interval": 30,
-                            "anchorDateTime": "0001-01-01T04:00:00Z"
-                        }
-                    }
-                },
-                {
-                    "comments": "### Output table _Destin_Stocks_Load ###",
-                    "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
-                    ],
-                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]",
-                    "type": "datasets",
-                    "apiVersion": "[variables('data_factory_version')]",
-                    "properties": {
-                        "type": "AzureSqlDWTable",
-                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
-                        "typeProperties": {
-                            "tableName": "Stocks_Load"
-                        },
-                        "availability": {
-                            "frequency": "Minute",
-                            "interval": 30,
-                            "anchorDateTime": "0001-01-01T04:00:00Z"
-                        }
-                    }
-                },
-                {
-                    "comments": "### Output table _FinalDestin_Nasdaq_Listed ###",
-                    "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
-                    ],
-                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Nasdaq_Listed')]",
-                    "type": "datasets",
-                    "apiVersion": "[variables('data_factory_version')]",
-                    "properties": {
-                        "type": "AzureSqlDWTable",
-                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
-                        "typeProperties": {
-                            "tableName": "Nasdaq_Listed"
-                        },
-                        "availability": {
-                            "frequency": "Minute",
-                            "interval": 30,
-                            "anchorDateTime": "0001-01-01T04:00:00Z"
-                        }
-                    }
-                },
-                {
-                    "comments": "### Output table _FinalDestin_Stocks ###",
-                    "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]"
-                    ],
-                    "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Stocks')]",
-                    "type": "datasets",
-                    "apiVersion": "[variables('data_factory_version')]",
-                    "properties": {
-                        "type": "AzureSqlDWTable",
-                        "linkedServiceName": "[variables('data_factory_sqldw_linked_service_name')]",
-                        "typeProperties": {
-                            "tableName": "Stocks"
-                        },
-                        "availability": {
-                            "frequency": "Minute",
-                            "interval": 30,
-                            "anchorDateTime": "0001-01-01T04:00:00Z"
-                        }
-                    }
-                },
-                {
-                    "comments": "### Nasdaq Listed Pipeline ###",
-                    "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]"
-                    ],
-                    "type": "datapipelines",
-                    "name": "[concat(variables('data_factory_pipeline_prefix'), '_Nasdaq_Listed_Pipleine')]",
-                    "apiVersion": "[variables('data_factory_version')]",
-                    "properties": {
-                        "description": "CopyActivity",
-                        "activities": [
-                            {
-                                "name": "CopyFromDBToDW",
-                                "description": "Push from DB to DW",
-                                "type": "Copy",
-                                "inputs": [ { "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]" } ],
-                                "outputs": [ { "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Stocks_Load')]" } ],
-                                "typeProperties": {
-                                    "source": {
-                                        "type": "AzureTableSource"
-                                    },
-                                    "sink": {
-                                        "type": "SqlSink",
-                                        "writeBatchSize": 10000,
-                                        "writeBatchTimeout": "60.00:00:00"
-                                    }
-                                },
-                                "policy": {
-                                    "timeout": "01:00:00",
-                                    "concurrency": 1,
-                                    "executionPriorityOrder": "NewestFirst"
-                                },
-                                "scheduler": {
-                                    "frequency": "Minute",
-                                    "interval": 30,
-                                    "anchorDateTime": "0001-01-01T04:00:00Z"
-                                }
-                            },
-                            {
-                                "type": "SqlServerStoredProcedure",
-                                "typeProperties": {
-                                    "storedProcedureName": "sp_insert_stocks"
-                                },
-                                "inputs": [
-                                    {
-                                        "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Stocks')]"
-                                    }
-                                ],
-                                "outputs": [
-                                    {
-                                        "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Stocks')]"
-                                    }
-                                ],
-                                "scheduler": {
-                                    "frequency": "Minute",
-                                    "interval": 30,
-                                    "anchorDateTime": "0001-01-01T04:00:00Z"
-                                },
-                                "name": "SQLSPROCActivity",
-                                "description": "description"
-                            }
-                        ],
-                        "start": "2016-05-03T23:00:00Z",
-                        "end": "2017-12-31T00:00:00Z",
-                        "isPaused": false,
-                        "pipelineMode": "Scheduled"
-                    }
-                },
-                {
-                    "comments": "### Stocks Pipeline ###",
-                    "dependsOn": [
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldb_linked_service_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/linkedServices/', variables('data_factory_sqldw_linked_service_name'))]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]",
-                        "[concat('Microsoft.DataFactory/dataFactories/', variables('data_factory_name'), '/datasets/', variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]"
-                    ],
-                    "type": "datapipelines",
-                    "name": "[concat(variables('data_factory_pipeline_prefix'), '_Stocks_Pipleine')]",
-                    "apiVersion": "[variables('data_factory_version')]",
-                    "properties": {
-                        "description": "CopyActivity",
-                        "activities": [
-                            {
-                                "name": "CopyFromDBToDW",
-                                "description": "Push from DB to DW",
-                                "type": "Copy",
-                                "inputs": [ { "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]" } ],
-                                "outputs": [ { "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_Destin_Nasdaq_Listed_Load')]" } ],
-                                "typeProperties": {
-                                    "source": {
-                                        "type": "AzureTableSource"
-                                    },
-                                    "sink": {
-                                        "type": "SqlSink",
-                                        "writeBatchSize": 10000,
-                                        "writeBatchTimeout": "60.00:00:00"
-                                    }
-                                },
-                                "policy": {
-                                    "timeout": "01:00:00",
-                                    "concurrency": 1,
-                                    "executionPriorityOrder": "NewestFirst"
-                                },
-                                "scheduler": {
-                                    "frequency": "Minute",
-                                    "interval": 30,
-                                    "anchorDateTime": "0001-01-01T04:00:00Z"
-                                }
-                            },
-                            {
-                                "type": "SqlServerStoredProcedure",
-                                "typeProperties": {
-                                    "storedProcedureName": "sp_insert_nasdaq_Listed"
-                                },
-                                "inputs": [
-                                    {
-                                        "name": "[concat(variables('data_factory_sqldb_input_table_prefix'), '_Source_Nasdaq_Listed_Load')]"
-                                    }
-                                ],
-                                "outputs": [
-                                    {
-                                        "name": "[concat(variables('data_factory_sqldw_output_table_prefix'), '_FinalDestin_Nasdaq_Listed')]"
-                                    }
-                                ],
-                                "scheduler": {
-                                    "frequency": "Minute",
-                                    "interval": 30,
-                                    "anchorDateTime": "0001-01-01T04:00:00Z"
-                                },
-                                "name": "SQLSPROCActivity",
-                                "description": "description"
-                            }
-                        ],
-                        "start": "2016-05-03T23:00:00Z",
-                        "end": "2017-12-31T00:00:00Z",
-                        "isPaused": false,
-                        "pipelineMode": "Scheduled"
+                        "endIpAddress": "[parameters('local_machine_external_ip_address')]",
+                        "startIpAddress": "[parameters('local_machine_external_ip_address')]"
                     }
                 }
             ]
@@ -785,7 +290,8 @@
                     "type": "config",
                     "name": "appsettings",
                     "dependsOn": [
-                        "[variables('web_service_resource_id')]"
+                        "[variables('web_service_resource_id')]",
+                        "[concat('Microsoft.Web/sites/', variables('web_service_name'), '/extensions/', 'MSDeploy')]"
                     ],
                     "properties": {
                         "MobileAppsManagement_EXTENSION_VERSION": "latest",
@@ -1516,14 +1022,34 @@
             "value": "[reference(variables('web_service_resource_id')).hostNames[0]]"
         },
         
-        "sql_server_data_warehouse_name": {
+        "sqldw_server_database_name": {
             "type": "string",
             "value": "[variables('sql_server_dw_name')]"   
+        },
+
+        "sqldw_server_fqdn": {
+            "type": "string",
+            "value": "[reference(variables('sqldw_server_resource_id')).fullyQualifiedDomainName]"
+        },
+
+        "sqldw_server_fq_username": {
+            "type": "string",
+            "value": "[concat(variables('sqldw_server_username'), '@', variables('sqldw_server_name'))]"
+        },
+
+        "sqldw_server_password": {
+            "type": "string",
+            "value": "[variables('sqldw_server_password')]"
         },
         
         "sql_server_name": {
             "type": "string",
             "value": "[variables('sql_server_name')]"
+        },
+
+        "sqldw_server_name": {
+            "type": "string",
+            "value": "[variables('sqldw_server_name')]"
         },
         
         "sql_server_fqdn": {
@@ -1540,6 +1066,11 @@
             "type": "string",
             "value": "[variables('sql_server_username')]"
         },
+
+        "sqldw_server_username": {
+            "type": "string",
+            "value": "[variables('sqldw_server_username')]"
+        },
         
         "sql_server_fq_username": {
             "type": "string",
@@ -1549,21 +1080,6 @@
         "sql_server_password": {
             "type": "string",
             "value": "[variables('sql_server_password')]"
-        },
-        
-        "virtual_machine_name": {
-            "type": "string",
-            "value": "[variables('vm_name')]"  
-        },
-        
-        "virtual_machine_username": {
-            "type": "string",
-            "value": "[variables('vm_admin_username')]"
-        },
-        
-        "virtual_machine_password": {
-            "type": "string",
-            "value": "[variables('vm_admin_password')]"
         },
         
         "stream_analytics_job_name_for_power_bi": {
