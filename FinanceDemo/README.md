@@ -1,3 +1,16 @@
+Resources:
+=========================
+*   Azure Blob Storage Accounts
+*   Web Service
+*   Service Bus Namespace
+   *   Event Hubs
+   *   Topics
+*   Azure Stream Analytics
+*   Azure SQL Server
+*   Azure SQL Data Warehouse
+*   Azure Data Factory
+   *   SQL DB Input
+   *   SQL DW Output
 
 Deployment Instructions
 =========================
